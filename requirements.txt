@@ -1,0 +1,6 @@
+# 核心运行仅依赖 Python 原生库与系统安装的 whisper-cli (或 whisper.cpp) 与 ffmpeg
+# 若系统未安装 whisper-cli，可选安装 faster-whisper 进行降级：
+# faster-whisper>=1.0.0
+
+# 开发与测试依赖
+pytest>=7.0.0

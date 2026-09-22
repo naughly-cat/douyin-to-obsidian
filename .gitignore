@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtualenv
+venv/
+.venv/
+ENV/
+
+# Testing & Linting
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local cache & downloads
+.cache/
+*.tmp
+*.media
+*.wav
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# User data
+.transcripts_cache.json
+output/
+ObsidianVault/

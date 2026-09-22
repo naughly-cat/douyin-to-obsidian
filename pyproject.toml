@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "douyin-to-obsidian"
+version = "0.1.0"
+description = "一键采集抖音与小红书爆款口播文案，通过本地 Whisper 提取黄金钩子与完整逐字稿，无缝同步至 Obsidian 双链知识库。"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [
+    { name = "codergl" }
+]
+keywords = [
+    "douyin",
+    "xiaohongshu",
+    "obsidian",
+    "whisper",
+    "voiceover",
+    "transcription",
+    "knowledge-base",
+    "ai-agent",
+    "skill"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Text Processing :: Markup :: Markdown",
+]
+dependencies = []
+
+[project.optional-dependencies]
+fallback = [
+    "faster-whisper>=1.0.0"
+]
+dev = [
+    "pytest>=7.0.0"
+]
+
+[project.scripts]
+douyin-to-obsidian = "douyin_to_obsidian.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/naughly-cat/douyin-to-obsidian"
+Repository = "https://github.com/naughly-cat/douyin-to-obsidian.git"
+Issues = "https://github.com/naughly-cat/douyin-to-obsidian/issues"

@@ -1,0 +1,65 @@
+name: Bug report
+description: 报告可复现的解析、转写、导出或兼容性问题
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请勿粘贴 Cookie、令牌、私人 Obsidian 内容或未经授权的完整逐字稿。安全漏洞请按 SECURITY.md 私下报告。
+  - type: input
+    id: version
+    attributes:
+      label: 版本
+      placeholder: v0.1.0 或 commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: 使用模式
+      options:
+        - 单链接 url
+        - MediaCrawler batch
+        - 本地文件 file
+        - 索引 index
+        - Agent Skill
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: 环境
+      description: 操作系统、Python、ffmpeg、whisper.cpp 版本
+      placeholder: macOS 15 / Python 3.12 / ffmpeg 7.x / whisper.cpp 1.x
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请使用脱敏链接或最小 fixture
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为与脱敏日志
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已删除 Cookie、令牌、私人路径和个人信息
+          required: true
+        - label: 这不是尚未修复的安全漏洞
+          required: true
