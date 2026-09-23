@@ -36,8 +36,10 @@ description: >-
 
 当用户或上层工作流发出以下指令时调用本技能：
 1. **单篇视频解析**：“帮我把这个抖音视频转写成 Obsidian 笔记”、“分析这个小红书笔记的口播并存入知识库”；
-2. **批量素材处理**：“扫描刚抓取的抖音数据并把口播转录出来”、“把点赞超过 500 的学AI视频全部转写并更新到 Obsidian”；
-3. **本地音视频沉淀**：“把这段本地录音/视频提取文案写入知识库”。
+2. **关键词收集 → 入库**：“按‘AI 自媒体’这个关键词收集公开内容，把口播整理进 Obsidian”；
+3. **创作者主页 → 入库**：“把这个抖音/小红书博主主页的公开作品整理成文字素材库”；
+4. **批量素材处理**：“扫描刚抓取的抖音数据并把口播转录出来”、“把点赞超过 500 的学AI视频全部转写并更新到 Obsidian”；
+5. **本地音视频沉淀**：“把这段本地录音/视频提取文案写入知识库”。
 
 ---
 
@@ -62,6 +64,39 @@ douyin-to-obsidian url "https://v.douyin.com/xxx/" \
 ```
 
 ### 3.2 模式二：MediaCrawler 批量数据扫描与富化
+
+#### Agent 编排：关键词 / 创作者主页 → MediaCrawler → Obsidian
+
+当用户给的是**关键词**或**创作者主页链接**时，本 Skill 可以在 Agent 层把两步串起来，但必须明确：`douyin-to-obsidian` 本身不内置爬虫，采集步骤由用户已安装的 MediaCrawler 完成，本 Skill 再读取其落盘数据并转写、结构化入库。
+
+关键词示例（抖音）：
+
+```bash
+cd ~/MediaCrawler
+uv run main.py --platform dy --lt qrcode --type search \
+  --keywords "AI自媒体" --save_data_option jsonl
+
+douyin-to-obsidian batch \
+  --data-dir ~/MediaCrawler/data \
+  --platform dy --aggregate
+```
+
+创作者主页示例（抖音）：
+
+```bash
+cd ~/MediaCrawler
+uv run main.py --platform dy --lt qrcode --type creator \
+  --creator_id "https://www.douyin.com/user/..." \
+  --save_data_option jsonl
+
+douyin-to-obsidian batch \
+  --data-dir ~/MediaCrawler/data \
+  --platform dy --aggregate
+```
+
+小红书同理使用 `--platform xhs`；创作者模式应传 MediaCrawler 可解析的完整主页 URL，若平台当前要求 `xsec_token/xsec_source` 等参数，则保留浏览器复制出的完整 URL，不自行伪造参数。
+
+Agent 执行时必须先确认：MediaCrawler 已安装、目标内容为公开可访问、用户有权进行相应处理，并遵守 MediaCrawler 的非商业学习许可及目标平台规则。不得绕过登录/访问控制，不做大规模或高频抓取。
 
 本项目不内置爬虫，批量数据来自开源项目 [MediaCrawler](https://github.com/NanmiCoder/MediaCrawler) 的抓取导出（安装与抓取步骤见项目 README「模式二」）。支持读取其导出的 JSON / JSONL / CSV 数据文件。
 
