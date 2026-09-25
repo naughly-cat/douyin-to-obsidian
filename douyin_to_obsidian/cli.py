@@ -6,7 +6,8 @@
 1. douyin-to-obsidian url "分享文本或链接"   # 单链接/分享口令转录导出
 2. douyin-to-obsidian batch                 # MediaCrawler 批量数据扫描与转写
 3. douyin-to-obsidian file "本地音视频路径"   # 本地音视频文件直接转录
-4. douyin-to-obsidian index                 # 仅刷新知识库全局双链索引
+4. douyin-to-obsidian radar                 # 抖音爆款问题母题雷达
+5. douyin-to-obsidian index                 # 仅刷新知识库全局双链索引
 """
 
 import argparse
@@ -18,9 +19,11 @@ from .config import Config
 from .core.analyzer import ContentAnalyzer
 from .core.crawler_adapter import CrawlerAdapter
 from .core.net import configure_tls
+from .core.radar import ViralTopicRadar
 from .core.parser import MediaParser
 from .core.transcriber import Transcriber
 from .exporters.obsidian import ObsidianExporter
+from .exporters.radar import RadarExporter
 
 
 def cmd_url(args, cfg: Config):
@@ -232,6 +235,96 @@ def cmd_batch(args, cfg: Config):
     print(f"[+] 全局索引已更新: {hub_path}")
 
 
+def cmd_radar(args, cfg: Config):
+    """从 MediaCrawler 数据构建 Douyin Viral Topic Radar。"""
+    data_dir = Path(args.data_dir or cfg.mc_data_dir).expanduser().resolve()
+    print(
+        f"[*] 构建 Douyin Viral Topic Radar: {data_dir} "
+        f"(窗口={args.window_days}天, 最低作者数={args.min_authors})"
+    )
+
+    # 雷达需要“普通作品 + 爆款作品”一起参与作者基线计算，
+    # 所以默认 min_likes=0，不建议只喂高赞样本。
+    items = CrawlerAdapter.load_crawled_data(
+        data_dir,
+        platform=args.platform,
+        min_likes=args.min_likes,
+        date_filter=args.date,
+    )
+    if not items:
+        print("[-] 没有找到可用于雷达分析的作品数据。")
+        sys.exit(1)
+
+    # 如果此前 batch 已经转写过，复用缓存增强语义聚类；radar 本身不批量跑 ASR。
+    cache_file = cfg.obsidian_dir / ".transcripts_cache.json"
+    try:
+        cache = CrawlerAdapter.load_cache(cache_file)
+    except RuntimeError as exc:
+        print(f"[-] {exc}")
+        sys.exit(1)
+
+    cache_hits = 0
+    for item in items:
+        cid = str(item.get("id") or "")
+        cached = cache.get(cid)
+        if not cached:
+            continue
+        if not item.get("transcript") and cached.get("transcript"):
+            item["transcript"] = cached.get("transcript", "")
+        if not item.get("hook_15s") and cached.get("hook_15s"):
+            item["hook_15s"] = cached.get("hook_15s", "")
+        cache_hits += 1
+
+    comments = []
+    if not args.no_comments:
+        comments = CrawlerAdapter.load_comments(
+            data_dir,
+            platform=args.platform,
+            date_filter=args.date,
+        )
+
+    creator_profiles = CrawlerAdapter.load_creator_profiles(
+        data_dir,
+        platform=args.platform,
+    )
+
+    radar = ViralTopicRadar(
+        window_days=args.window_days,
+        recent_days=args.recent_days,
+        min_authors=args.min_authors,
+    )
+    report = radar.build(
+        items,
+        comments=comments,
+        creator_profiles=creator_profiles,
+        top_n=args.top,
+    )
+
+    exporter = RadarExporter(cfg.obsidian_dir)
+    paths = exporter.export(report)
+    ObsidianExporter(cfg.obsidian_dir).update_index_hub()
+
+    print(f"[+] 视频样本: {report['sample_size']} 条；评论样本: {report['comment_sample_size']} 条")
+    print(f"[+] 命中转写缓存: {cache_hits} 条")
+    print(f"[+] 跨账号母题: {report['topic_count']} 个")
+    print(f"[+] 雷达看板: {paths['markdown']}")
+    print(f"[+] 结构化真源: {paths['json']}")
+
+    topics = report.get("topics") or []
+    if topics:
+        print("\n=== Top Viral Mother Topics ===")
+        for idx, topic in enumerate(topics[: min(10, len(topics))], 1):
+            mult = topic.get("median_viral_multiplier")
+            mult_text = "N/A" if mult is None else f"{mult:.1f}x"
+            print(
+                f"{idx:>2}. {topic['market_score']:>5.1f} | "
+                f"{topic['mother_topic']} | "
+                f"{topic['unique_authors']} authors | {mult_text}"
+            )
+    else:
+        print("[!] 当前没有满足跨账号门槛的母题；优先扩大关键词/创作者/评论采样。")
+
+
 def cmd_index(args, cfg: Config):
     """刷新知识库索引"""
     exporter = ObsidianExporter(cfg.obsidian_dir)
@@ -291,6 +384,33 @@ def main():
     p_batch.add_argument("--date", type=str, default=None, help="指定日期批次 (如 2026-09-20)")
     p_batch.add_argument("--reset-cache", action="store_true", help="重置已有转写缓存")
 
+    # radar 子命令
+    p_radar = subparsers.add_parser(
+        "radar",
+        help="从 MediaCrawler 数据识别跨账号爆款问题母题",
+        parents=[common_parser],
+    )
+    p_radar.add_argument("--data-dir", type=str, default=None, help="MediaCrawler 数据目录")
+    p_radar.add_argument(
+        "--platform",
+        type=str,
+        default="dy",
+        choices=["dy", "douyin", "xhs", "xiaohongshu", "all"],
+        help="默认分析抖音；也可用于小红书或混合样本",
+    )
+    p_radar.add_argument(
+        "--min-likes",
+        type=int,
+        default=0,
+        help="进入作者基线计算的最低点赞；默认0，避免只分析已爆作品造成基线失真",
+    )
+    p_radar.add_argument("--window-days", type=int, default=30, help="母题观察窗口，默认30天")
+    p_radar.add_argument("--recent-days", type=int, default=7, help="短周期热度窗口，默认7天")
+    p_radar.add_argument("--min-authors", type=int, default=2, help="进入母题榜的最少独立作者数")
+    p_radar.add_argument("--top", type=int, default=20, help="最多输出母题数量")
+    p_radar.add_argument("--date", type=str, default=None, help="可选：只扫描文件名包含该日期的批次")
+    p_radar.add_argument("--no-comments", action="store_true", help="不读取评论数据（评论需求维度将不可用）")
+
     # file 子命令
     p_file = subparsers.add_parser(
         "file", help="转录本地音视频文件并导出到 Obsidian", parents=[common_parser]
@@ -318,6 +438,8 @@ def main():
         cmd_batch(args, cfg)
     elif args.subcommand == "file":
         cmd_file(args, cfg)
+    elif args.subcommand == "radar":
+        cmd_radar(args, cfg)
     elif args.subcommand == "index":
         cmd_index(args, cfg)
     else:
