@@ -99,3 +99,62 @@ def test_user_field_variants_do_not_crash():
         assert items["a1"]["author"] == "字符串昵称"
         assert items["a2"]["author"] == "字典昵称"
         assert items["a3"]["author"] == "未知创作者"
+
+
+def test_load_comments_for_radar():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        data_dir = Path(tmp_dir)
+        dy_dir = data_dir / "douyin" / "jsonl"
+        dy_dir.mkdir(parents=True, exist_ok=True)
+
+        records = [
+            {
+                "comment_id": "c1",
+                "aweme_id": "v1",
+                "content": "论文也可以吗？",
+                "like_count": 12,
+                "sub_comment_count": 2,
+            },
+            {
+                "comment_id": "c2",
+                "aweme_id": "v1",
+                "content": "求提示词",
+                "like_count": 8,
+            },
+        ]
+        file_path = dy_dir / "aweme_comments.jsonl"
+        with open(file_path, "w", encoding="utf-8") as fobj:
+            for row in records:
+                fobj.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+        comments = CrawlerAdapter.load_comments(data_dir, platform="dy")
+        assert len(comments) == 2
+        assert comments[0]["item_id"] == "v1"
+        assert comments[0]["content"]
+        assert comments[0]["like_count"] >= 0
+
+
+def test_load_creator_profiles_when_follower_data_exists():
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        data_dir = Path(tmp_dir)
+        dy_dir = data_dir / "douyin" / "json"
+        dy_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path = dy_dir / "creator_profiles.json"
+        file_path.write_text(
+            json.dumps(
+                [
+                    {
+                        "creator_hash": "creator-1",
+                        "nickname": "测试作者",
+                        "follower_count": 4321,
+                    }
+                ],
+                ensure_ascii=False,
+            ),
+            encoding="utf-8",
+        )
+
+        profiles = CrawlerAdapter.load_creator_profiles(data_dir, platform="douyin")
+        assert profiles["id:creator-1"]["follower_count"] == 4321
+        assert profiles["name:测试作者"]["follower_count"] == 4321
