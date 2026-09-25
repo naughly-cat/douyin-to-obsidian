@@ -1,7 +1,7 @@
 # douyin-to-obsidian
 
 <p align="center">
-  <strong>一键采集抖音与小红书爆款口播文案，通过本地 Whisper 提取黄金钩子与完整逐字稿，无缝同步至 Obsidian 双链知识库。</strong>
+  <strong>采集抖音/小红书素材、Whisper 转写入 Obsidian，并用 Douyin Viral Topic Radar 识别跨账号爆款问题母题。</strong>
 </p>
 
 <p align="center">
@@ -33,6 +33,10 @@
 
 ## ✨ 核心特性
 
+- **Douyin Viral Topic Radar**：
+  - 不只按绝对点赞找爆款，而是识别“跨账号重复出现的问题母题”；
+  - 计算作者自身基线异常倍率、7/30 天时间密度、高意图互动、评论需求与可用时的低粉突破；
+  - 输出 Market Score、证据视频、评论区需求树与结构化 JSON，供 Agent 二次语义合并。
 - **多模式输入支持**：
   - 🔗 **单链接/分享文本**：直接粘贴抖音/小红书手机端分享文本，自动提取并转录；
   - 📦 **MediaCrawler 批量数据对接**：无缝读取 MediaCrawler 抓取目录（JSON/JSONL/CSV），按点赞阈值批量富化；
@@ -149,12 +153,50 @@ douyin-to-obsidian batch --platform dy --date 2026-09-20
 
 > ⚠️ MediaCrawler 仅供学习研究使用（其自身许可禁止商业用途）；抓取内容的版权归原作者所有，请遵守目标平台的服务条款，合理控制抓取频率。
 
-### 模式三：本地音视频文件转录
+### 模式三：Douyin Viral Topic Radar
+
+先用 MediaCrawler 采集一批同赛道作品，最好同时抓评论；**不要只保留高赞视频**，因为作者普通作品是计算“爆款倍率”的基线。
+
+```bash
+douyin-to-obsidian radar \
+  --data-dir ~/MediaCrawler/data \
+  --platform dy \
+  --window-days 30 \
+  --recent-days 7 \
+  --min-authors 2 \
+  --top 20
+```
+
+默认会生成：
+
+```text
+<OBSIDIAN_DIR>/
+├── 数据-抖音爆款选题雷达.md
+└── .douyin-to-obsidian/
+    └── viral-topic-radar.json
+```
+
+Market Score 默认由六类信号组成：
+
+| 维度 | 权重 |
+|---|---:|
+| 跨账号爆款复现 | 25 |
+| 相对作者自身基线异常 | 20 |
+| 近 7/30 天热度密度 | 15 |
+| 收藏/分享等高意图互动 | 15 |
+| 评论区需求密度 | 15 |
+| 低粉账号突破（数据可用时） | 10 |
+
+缺失的作者基线、发布时间、评论或粉丝数据会标记为不可用，并按可用权重归一，不会猜测或硬记 0 分。
+
+> Radar 的轻量聚类只是第一遍。最终仍建议让 Agent 读取 `.douyin-to-obsidian/viral-topic-radar.json`，把“AI看PDF / AI读报告 / AI总结论文”这类近义题合并成真正的问题母题，再进入你自己的选题 Fit Score。
+
+### 模式四：本地音视频文件转录
 ```bash
 douyin-to-obsidian file ~/Downloads/interview.mp4 --title "AI工具深度访谈" --author "李四"
 ```
 
-### 模式四：刷新知识库索引
+### 模式五：刷新知识库索引
 ```bash
 douyin-to-obsidian index
 ```
@@ -175,6 +217,7 @@ python3 -m pip install -e .
 安装完成后即可向 AI 发出自然语言指令：
 - *“帮我把这个抖音视频转写成 Obsidian 笔记，提取前15秒反差钩子”*
 - *“把刚刚爬取的学AI爆款视频里点赞超过 1000 的全部转录出来并更新知识库索引”*
+- *“帮我跑 Douyin Viral Topic Radar，不要只看绝对点赞，找最近多个独立账号都验证过的问题母题”*
 
 ---
 
@@ -243,10 +286,12 @@ douyin-to-obsidian/
 │   │   ├── transcriber.py            # Whisper ASR、模型下载校验与镜像回退
 │   │   ├── parser.py                 # 分享链接与媒体直链解析
 │   │   ├── analyzer.py               # 黄金15秒钩子提炼与主题打标
+│   │   ├── radar.py                  # 爆款母题聚类、作者基线异常与 Market Score
 │   │   ├── net.py                    # HTTP 工具（默认严格 TLS 证书校验）
 │   │   └── crawler_adapter.py        # MediaCrawler 批量数据读取与缓存
 │   └── exporters/
-│       └── obsidian.py               # 原生 Obsidian Markdown 与双链生成
+│       ├── obsidian.py               # 原生 Obsidian Markdown 与双链生成
+│       └── radar.py                  # Radar JSON 真源与 Obsidian 看板导出               # 原生 Obsidian Markdown 与双链生成
 └── tests/                            # pytest 自动化测试套件
     ├── test_analyzer.py
     ├── test_cli.py
