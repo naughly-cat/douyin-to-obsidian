@@ -4,5 +4,6 @@
 """
 
 from .obsidian import ObsidianExporter
+from .radar import RadarExporter
 
-__all__ = ["ObsidianExporter"]
+__all__ = ["ObsidianExporter", "RadarExporter"]
