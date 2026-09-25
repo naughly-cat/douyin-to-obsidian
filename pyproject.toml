@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "douyin-to-obsidian"
-version = "0.1.0"
-description = "一键采集抖音与小红书爆款口播文案，通过本地 Whisper 提取黄金钩子与完整逐字稿，无缝同步至 Obsidian 双链知识库。"
+version = "0.2.0"
+description = "采集抖音/小红书素材、Whisper 转写入 Obsidian，并用 Douyin Viral Topic Radar 识别跨账号爆款问题母题。"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
@@ -22,7 +22,9 @@ keywords = [
     "transcription",
     "knowledge-base",
     "ai-agent",
-    "skill"
+    "skill",
+    "viral-topics",
+    "content-research"
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
