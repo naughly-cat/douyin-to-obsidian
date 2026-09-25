@@ -333,6 +333,15 @@ def cmd_index(args, cfg: Config):
 
 
 def main():
+    # Windows CI/终端可能默认 cp1252，中文 help 会触发 UnicodeEncodeError。
+    # 能 reconfigure 时统一为 UTF-8；不支持的流保持原状。
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8")
+        except (AttributeError, OSError):
+            pass
+
     # default=SUPPRESS：顶层与子命令共用参数时不互相覆盖，
     # 子命令未提供时保留顶层传入值（或最终缺失，由 getattr 兜底）
     common_parser = argparse.ArgumentParser(add_help=False)
