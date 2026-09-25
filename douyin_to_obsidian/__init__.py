@@ -3,7 +3,7 @@
 douyin-to-obsidian: 抖音/小红书口播文案采集、Whisper 语音转写与 Obsidian 知识库双链导出工具。
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 __author__ = "codergl"
 __license__ = "MIT"
 
@@ -11,7 +11,9 @@ from .core.transcriber import Transcriber, ensure_model
 from .core.parser import MediaParser
 from .core.analyzer import ContentAnalyzer
 from .core.crawler_adapter import CrawlerAdapter
+from .core.radar import ViralTopicRadar
 from .exporters.obsidian import ObsidianExporter
+from .exporters.radar import RadarExporter
 from .config import Config
 
 __all__ = [
@@ -20,6 +22,8 @@ __all__ = [
     "MediaParser",
     "ContentAnalyzer",
     "CrawlerAdapter",
+    "ViralTopicRadar",
     "ObsidianExporter",
+    "RadarExporter",
     "Config",
 ]
