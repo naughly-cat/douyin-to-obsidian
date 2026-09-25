@@ -39,10 +39,10 @@ def _item(
 def test_radar_finds_cross_account_long_document_mother_topic():
     now = time.time()
     items = [
-        _item("a1", "作者A", "ChatGPT帮我看50页PDF", 1000, author_id="A", shares=80, collects=150, comments=60, days_ago=1, follower_count=5000),
+        _item("a1", "作者A", "ChatGPT帮我看50页PDF", 1000, author_id="A", shares=80, collects=150, comments=60, days_ago=1, follower_count=1500),
         _item("a2", "作者A", "我的桌面收纳", 100, author_id="A", days_ago=10, follower_count=5000),
         _item("a3", "作者A", "周末随手记录", 120, author_id="A", days_ago=12, follower_count=5000),
-        _item("b1", "作者B", "豆包直接读行业报告靠谱吗", 800, author_id="B", shares=70, collects=120, comments=50, days_ago=2, follower_count=8000),
+        _item("b1", "作者B", "豆包直接读行业报告靠谱吗", 800, author_id="B", shares=70, collects=120, comments=50, days_ago=2, follower_count=1200),
         _item("b2", "作者B", "午饭吃什么", 80, author_id="B", days_ago=9, follower_count=8000),
         _item("b3", "作者B", "手机桌面整理", 90, author_id="B", days_ago=11, follower_count=8000),
     ]
