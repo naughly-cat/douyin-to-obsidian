@@ -48,8 +48,7 @@ class RadarExporter:
 
     @staticmethod
     def _safe(text: Any) -> str:
-        return str(text or "").replace("|", "｜").replace("
-", " ").strip()
+        return str(text or "").replace("|", "｜").replace("\n", " ").strip()
 
     def export(
         self,
@@ -62,8 +61,7 @@ class RadarExporter:
 
         self._atomic_write(
             state_path,
-            json.dumps(report, ensure_ascii=False, indent=2, default=str) + "
-",
+            json.dumps(report, ensure_ascii=False, indent=2, default=str) + "\n",
         )
         self._atomic_write(md_path, self._render_markdown(report))
         return {"json": state_path, "markdown": md_path}
@@ -106,7 +104,11 @@ class RadarExporter:
             recent = f"{topic.get('recent_count', 0)}/{topic.get('window_count', 0)}"
             mult = topic.get("median_viral_multiplier")
             mult_text = "N/A" if mult is None else f"{mult:.1f}×"
-            review = "⚠️ 待语义复核" if topic.get("agent_semantic_review_required") else topic.get("confidence", "")
+            review = (
+                "⚠️ 待语义复核"
+                if topic.get("agent_semantic_review_required")
+                else topic.get("confidence", "")
+            )
             lines.append(
                 f"| {rank} | **{topic.get('market_score', 0):.1f}** | "
                 f"{self._safe(topic.get('mother_topic'))} | {topic.get('unique_authors', 0)} | "
@@ -143,8 +145,16 @@ class RadarExporter:
                 f"- **Market Score**：**{topic.get('market_score', 0):.1f}/100**",
                 f"- **独立作者**：{topic.get('unique_authors', 0)}",
                 f"- **样本数**：{topic.get('sample_count', 0)}",
-                f"- **中位爆款倍率**：{self._fmt(topic.get('median_viral_multiplier'))}×" if topic.get("median_viral_multiplier") is not None else "- **中位爆款倍率**：N/A（作者基线样本不足）",
-                f"- **最高爆款倍率**：{self._fmt(topic.get('max_viral_multiplier'))}×" if topic.get("max_viral_multiplier") is not None else "- **最高爆款倍率**：N/A",
+                (
+                    f"- **中位爆款倍率**：{self._fmt(topic.get('median_viral_multiplier'))}×"
+                    if topic.get("median_viral_multiplier") is not None
+                    else "- **中位爆款倍率**：N/A（作者基线样本不足）"
+                ),
+                (
+                    f"- **最高爆款倍率**：{self._fmt(topic.get('max_viral_multiplier'))}×"
+                    if topic.get("max_viral_multiplier") is not None
+                    else "- **最高爆款倍率**：N/A"
+                ),
                 f"- **评论需求**：{topic.get('demand_comment_count', 0)}/{topic.get('loaded_comment_count', 0)}",
                 f"- **低粉突破样本**：{topic.get('low_follower_breakouts', 0)}",
                 f"- **置信状态**：{self._safe(topic.get('confidence'))}",
@@ -172,9 +182,14 @@ class RadarExporter:
                 ("low_follower_breakthrough", "低粉账号突破"),
             ]:
                 part = (topic.get("score_breakdown") or {}).get(key) or {}
-                score = "N/A" if part.get("score") is None else f"{part.get('score'):.1f}"
+                score = (
+                    "N/A"
+                    if part.get("score") is None
+                    else f"{part.get('score'):.1f}"
+                )
                 lines.append(
-                    f"| {label} | {score} | {part.get('weight', 0)} | {'是' if part.get('available') else '否'} |"
+                    f"| {label} | {score} | {part.get('weight', 0)} | "
+                    f"{'是' if part.get('available') else '否'} |"
                 )
 
             lines.extend(["", "### 爆款证据", ""])
@@ -185,7 +200,8 @@ class RadarExporter:
                 title = self._safe(ev.get("title"))
                 link = f"[{title}]({url})" if url else title
                 lines.append(
-                    f"- **{self._safe(ev.get('author'))}** · {ev.get('likes', 0)}赞 · {mult_text} · {link}"
+                    f"- **{self._safe(ev.get('author'))}** · {ev.get('likes', 0)}赞 · "
+                    f"{mult_text} · {link}"
                 )
 
             demands = topic.get("demand_questions") or []
@@ -213,5 +229,4 @@ class RadarExporter:
                 "",
             ])
 
-        return "
-".join(lines)
+        return "\n".join(lines)
