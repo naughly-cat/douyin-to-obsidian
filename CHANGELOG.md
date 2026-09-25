@@ -2,6 +2,27 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)；当前仍处于 `0.x` 早期阶段。
 
+## [0.2.0] - 2026-09-25
+
+### Added
+
+- 新增 `douyin-to-obsidian radar`：从 MediaCrawler 作品与评论中识别跨账号爆款“问题母题”；
+- 新增作者自身基线异常倍率、7/30 天时间密度、高意图互动、评论需求密度和可用时的低粉突破；
+- 新增 `数据-抖音爆款选题雷达.md` 与 `.douyin-to-obsidian/viral-topic-radar.json`；
+- 新增评论与创作者资料读取接口，为 Radar 提供需求和粉丝数据；
+- Agent Skill 升级为“两层雷达”：CLI 定量第一遍 + Agent 语义合并第二遍。
+
+### Changed
+
+- 不再把“绝对点赞高”直接等同于“选题强”；
+- 缺失的基线、评论、发布时间、粉丝指标标记为 N/A，并按可用权重归一；
+- Obsidian 全局索引增加 Viral Topic Radar 入口；
+- 版本升级至 0.2.0。
+
+### Fixed
+
+- Windows CLI 在 cp1252 终端输出中文 `--help` 时的 UnicodeEncodeError。
+
 ## [0.1.0] - 2026-09-22
 
 ### Added
