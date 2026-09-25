@@ -7,6 +7,7 @@ from .transcriber import Transcriber, ensure_model
 from .parser import MediaParser
 from .analyzer import ContentAnalyzer
 from .crawler_adapter import CrawlerAdapter
+from .radar import ViralTopicRadar
 
 __all__ = [
     "Transcriber",
@@ -14,4 +15,5 @@ __all__ = [
     "MediaParser",
     "ContentAnalyzer",
     "CrawlerAdapter",
+    "ViralTopicRadar",
 ]
