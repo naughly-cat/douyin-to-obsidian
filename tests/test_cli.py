@@ -102,3 +102,87 @@ def test_batch_persists_cache_for_records_with_existing_transcript(monkeypatch, 
     cli.cmd_batch(args, cfg)
 
     assert saved["v1"]["transcript"] == "无需 ASR 的正文"
+
+
+def test_radar_command_wires_data_comments_and_export(monkeypatch, tmp_path):
+    observed = {}
+
+    class FakeAdapter:
+        @staticmethod
+        def load_crawled_data(*args, **kwargs):
+            return [
+                {"id": "v1", "title": "PDF太长", "author": "A", "liked_count": 100},
+                {"id": "v2", "title": "报告太长", "author": "B", "liked_count": 120},
+            ]
+
+        @staticmethod
+        def load_cache(path):
+            return {}
+
+        @staticmethod
+        def load_comments(*args, **kwargs):
+            observed["comments_loaded"] = True
+            return [{"comment_id": "c1", "item_id": "v1", "content": "求方法"}]
+
+        @staticmethod
+        def load_creator_profiles(*args, **kwargs):
+            return {}
+
+    class FakeRadar:
+        def __init__(self, **kwargs):
+            observed["radar_kwargs"] = kwargs
+
+        def build(self, items, comments=None, creator_profiles=None, top_n=20):
+            observed["item_count"] = len(items)
+            observed["comment_count"] = len(comments or [])
+            observed["top_n"] = top_n
+            return {
+                "sample_size": len(items),
+                "comment_sample_size": len(comments or []),
+                "topic_count": 0,
+                "topics": [],
+            }
+
+    class FakeRadarExporter:
+        def __init__(self, output_dir):
+            pass
+
+        def export(self, report):
+            return {
+                "markdown": tmp_path / "radar.md",
+                "json": tmp_path / "radar.json",
+            }
+
+    class FakeObsidianExporter:
+        def __init__(self, output_dir):
+            pass
+
+        def update_index_hub(self):
+            observed["index_updated"] = True
+            return tmp_path / "index.md"
+
+    monkeypatch.setattr(cli, "CrawlerAdapter", FakeAdapter)
+    monkeypatch.setattr(cli, "ViralTopicRadar", FakeRadar)
+    monkeypatch.setattr(cli, "RadarExporter", FakeRadarExporter)
+    monkeypatch.setattr(cli, "ObsidianExporter", FakeObsidianExporter)
+
+    args = SimpleNamespace(
+        data_dir=str(tmp_path / "data"),
+        platform="dy",
+        min_likes=0,
+        date=None,
+        no_comments=False,
+        window_days=30,
+        recent_days=7,
+        min_authors=2,
+        top=20,
+    )
+    cfg = Config(obsidian_dir=str(tmp_path / "vault"), whisper_model="base")
+
+    cli.cmd_radar(args, cfg)
+
+    assert observed["comments_loaded"] is True
+    assert observed["item_count"] == 2
+    assert observed["comment_count"] == 1
+    assert observed["top_n"] == 20
+    assert observed["index_updated"] is True
